@@ -134,6 +134,10 @@ git_pull = function(){
   if(is.null(git2r::discover_repository()))
     stop('Working directory is not in a git repo, maybe you want git_clone(), or set up with git_remote() ')
 
+  # DOES need a valid git username for doing a pull
+  check_username()
+  message() # skip a line before Pull Results printed
+
   # Check has upstream branches, else skip
   # upstream_tracking = unlist(lapply(git2r::branches(flags='local'), function(brnch) !is.null(git2r::branch_get_upstream(brnch)) ) )
   currentbranch = git2r::repository_head('.')
@@ -218,6 +222,7 @@ git_clone = function(repo_name='', to='~/'){
   # This makes no sense if you're downloading a new repo
   # Annoying fix: make a temp repo, set as wd, and then setwd to new folder
   if(dir.exists(to)) stop(to,' already exists.\nDelete this directory or change the target parent directory "to=" argument')
+  to = path.expand(to)
   message('Cloning to ',to)
   currentwd = getwd()
   on.exit(expr=setwd(currentwd))  # Safety backup - if error return to current wd
@@ -226,7 +231,7 @@ git_clone = function(repo_name='', to='~/'){
   git2r::init(path=deleteme)
   setwd(deleteme)
   # BUG FIXED  must have progress=FALSE if inside a function
-  git2r::clone(from, path.expand(to), progress=FALSE, credentials=choose_credential(from))
+  git2r::clone(from, to, progress=FALSE, credentials=choose_credential(from))
   setwd(currentwd)
   on.exit() # Clear the error handling to allow wd to be changed if wanted now
   if(ask_proceed('Set working directory to here? (Y/N) ')){
@@ -245,18 +250,17 @@ git_clone = function(repo_name='', to='~/'){
 #' `GIT_DEFAULT_REMOTE` environmental value has been set, this will be suggested
 #' for 'origin'.
 #'
-#' If using a filesystem path for the remote, the option is given to create a full
-#' working tree (copy of all files) or bare repository. A bare repository is
-#' recommended for 'origin' because no one should make any changes to this directly
-#' (instead, clone their own copy). For pushing to a 'backup' or 'production' remote,
-#' you will want to push a copy of the files themselves.
+#' If using a filesystem path for the remote, you can only create a bare repository
+#' as the remote as limited by `git2r::push()`. A bare repository has the advantage
+#' for 'origin' because no one should make any changes to this directly
+#' (instead, clone their own copy).
 #'
 #' If you have set `GIT_DEFAULT_REMOTE` environmental value this will be suggested
 #' as the path for creating an 'origin' remote. This will make life easier because
 #' it will be the same as the rest of your projects / team and will be searched
-#' by `git_clone()`.
-#' Use `Sys.setenv(GIT_DEFAULT_REMOTE='P:/ath/to/teams/remote_repo/folder')`
-#' or better still, put this value in your settings with `file.edit('~/.Renviron')`
+#' by `git_clone()`. Put this value in your user settings with
+#' `file.edit('~/.Renviron')` or as a one-off:
+#' - `Sys.setenv(GIT_DEFAULT_REMOTE='P:/ath/to/teams/remote_repo/folder')`
 #'
 #' It is possible to use an on-premises 'origin' remote which in turn synchronises
 #' with another server.
@@ -347,10 +351,12 @@ git_remote = function(remote_name = NULL, remote_path = NULL){
   # Check whether any characters are illegal - maybe none?!
   #if(grepl('/',add_name)) stop('Cannot have "/" in remote name')
 
-  # If local path, will need to make the dir and init
+  # If local path, will need to make the dir and init -- this MUST be bare
+  # "Error in 'git2r_push': local push doesn't (yet) support pushing to non-bare repos."
+  # Must also use absolute paths normalizePath('../', winslash='/')
   if(!grepl('^http',add_url)){
-    use_bare = ask_proceed("Use bare repository for remote (see ?git_remote: recommended for 'origin') (Y/N): ")
-    check_and_create_valid_repo(target_path=add_url, bare=use_bare)
+    add_url = path.expand(add_url)
+    check_and_create_valid_repo(target_path=add_url)
   }
 
   # Possibly allow GIT_DEFAULT_REMOTE to be a cloud path and have

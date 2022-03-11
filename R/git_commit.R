@@ -12,7 +12,7 @@ git = function(){
   check_is_repo() # This is otherwise called by git_add()
   git_pull()
   git_add()
-  git_commit()
+  git_commit(confirm_id=FALSE)
   git_push(do_default=TRUE)
   return(invisible())
 }
@@ -155,13 +155,15 @@ git_add = function(){
 #'
 #' @param message Commit message, usually one sentence about a specific change,
 #'                character atomic. This is asked for interactively if left NULL.
+#' @param confirm_id Print out the current user identity which will be used for
+#'                the commit (this is always done for `git_pull()` )
 #' @returns Invisible NULL
 #' @export
-git_commit = function(message = NULL){
+git_commit = function(message = NULL, confirm_id = TRUE){
 
   check_is_repo() # This will throw error if not
 
-  check_username() # Must have a valid name / email to commit
+  check_username(silent = !confirm_id) # Must have a valid name / email to commit
 
   # Optionally run git_add() to show you what you are commiting
   message = ask_generic('Commit message: ', answer=message)

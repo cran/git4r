@@ -118,19 +118,20 @@ check_is_repo = function(){
 # repo at target_path, else gives an error.
 # Default is to compare the request new remote to current working dir but can
 # specify using here='/another/repo/path'
-check_and_create_valid_repo = function(target_path, here='.',bare=TRUE){
+# MUST be a bare repo for git_push to work. Do not allow anything else.
+check_and_create_valid_repo = function(target_path, here='.'){
   if(dir.exists(target_path)){
     if(length(list.files(target_path,all.files=TRUE))==0){
       # Empty, existing folder
       message('Converting empty directory into git repo')
-      git2r::init(path=target_path, bare=bare)
+      git2r::init(path=target_path, bare=TRUE)
       return(TRUE)
     }
     if(!is.null(git2r::discover_repository(path=target_path))){
       # Is some kind of git repo
-      if(!git2r::is_bare(target_path) & bare==TRUE){
+      if(!git2r::is_bare(target_path)){
         # Bare repo already here!
-        stop('This is a working directory, not a bare git repo. Call again with bare=FALSE to proceed')
+        stop('This is a working directory, not a bare git repo. Currently git2r can only push to bare remotes. Use git_clone to get a copy of a working directory.')
       } else {
         remote_latest_commit = tryCatch(git2r::last_commit(target_path)$sha,
                                         error=function(err) return(NULL))
@@ -157,9 +158,9 @@ check_and_create_valid_repo = function(target_path, here='.',bare=TRUE){
   } else {
     # Directory does NOT exist yet
     #ask_proceed('Create directory as git remote repo? (Y/N) ')
-    message('Creating', if(bare) ' bare' ,' repo at ',target_path)
+    message('Creating bare repo at ',target_path)
     dir.create(target_path, recursive=TRUE)
-    git2r::init(path=target_path, bare=bare)
+    git2r::init(path=target_path, bare=TRUE)
   }
   return(TRUE)
 }
@@ -186,7 +187,7 @@ Not all changes have been committed! Run git_diff() to see what.
 }
 
 # Confirm that a valid git user exists and print it
-check_username = function(){
+check_username = function(silent = FALSE){
 
   # Load your user settings
   local_user = git2r::config()$local$user.name
@@ -195,10 +196,10 @@ check_username = function(){
   global_email = git2r::config()$global$user.email
 
   if(!is.null(local_user) & !is.null(local_email)){
-    cat('Using local (repo-specific) identity: ',local_user,' <',local_email,'>', sep='')
+    if(!silent) cat('Using local (repo-specific) identity: ',local_user,' <',local_email,'>', sep='')
     return(invisible(TRUE))
   } else if(!is.null(global_user) & !is.null(global_email)){
-    cat('Using global (system default) identity: ',global_user,' <',global_email,'>', sep='')
+    if(!silent) cat('Using global (system default) identity: ',global_user,' <',global_email,'>', sep='')
     return(invisible(TRUE))
   } else {
     message('No config values for user.name and user.email could be found, these are required to commit')
@@ -210,7 +211,7 @@ check_username = function(){
     git2r::config(global=set_global, user.name=set_user, user.email=set_email)
     message('Done')
     # Now confirm values being used
-    cat('Using ',if(set_global) 'global' else 'local',' identity: ',global_user,' <',global_email,'>', sep='')
+    if(!silent) cat('Using ',if(set_global) 'global' else 'local',' identity: ',set_user,' <',set_email,'>', sep='')
     return(invisible(TRUE))
   }
 }

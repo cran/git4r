@@ -1,7 +1,7 @@
 Package: git4r
 Type: Package
 Title: Interactive Git for R
-Version: 0.1.1
+Version: 0.1.2
 Authors@R: 
   person(given = "John",
          family = "Hobbs",
@@ -20,8 +20,8 @@ Suggests: gitcreds, rstudioapi, knitr, rmarkdown
 RoxygenNote: 7.1.1
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2022-03-01 18:21:29 UTC; john
+Packaged: 2022-03-11 17:45:02 UTC; john
 Author: John Hobbs [aut, cre]
 Maintainer: John Hobbs <johnxhobbs@gmail.com>
 Repository: CRAN
-Date/Publication: 2022-03-02 19:50:05 UTC
+Date/Publication: 2022-03-11 18:10:02 UTC

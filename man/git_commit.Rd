@@ -4,11 +4,14 @@
 \alias{git_commit}
 \title{Git Commit}
 \usage{
-git_commit(message = NULL)
+git_commit(message = NULL, confirm_id = TRUE)
 }
 \arguments{
 \item{message}{Commit message, usually one sentence about a specific change,
 character atomic. This is asked for interactively if left NULL.}
+
+\item{confirm_id}{Print out the current user identity which will be used for
+the commit (this is always done for \code{git_pull()} )}
 }
 \value{
 Invisible NULL
